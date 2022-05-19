@@ -168,3 +168,11 @@ button:disabled {
     font-weight: 300;
     padding: 12px 24px 0
 }
+
+.users li {
+    margin-bottom: 5px;
+}
+
+.users li img {
+    width: 10px;
+}
