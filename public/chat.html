@@ -23,33 +23,25 @@
             <form id="message-form">
                 <input type="text" name="message" id="position" placeholder="message" autocomplete="off" required>
                 
-                <button>Send</button>
-            </form>
+                <button><img src="./img/telegram.png" alt=""></button>
             
-            <button id="send-location">Send Location</button>
+            </form>
         </div>
     </div>
 </div>
 
 
 <script id="message-template" type="text/html">
-    <div class="message">
-        <p>
-            <span class="message__name">{{username}}</span>
-            <span class="message__meta">{{createdAt}}</span>
-        </p>
-        <p>{{message}}</p>
+    <div class="message" style="{{#yourself}}float: right;{{/yourself}}">
+        <div class="message__chat">
+            <p>
+                <span class="message__name">{{username}}</span>
+            </p>
+            <p>{{message}}</p>
+        </div>
+        <span class="message__meta" title="{{detailTime}}">{{createdAt}}</span>
     </div>
-</script>
-
-<script id="location-message-template" type="text/html">
-    <div>
-        <p>
-            <span class="message__name">{{username}}</span>
-            <span class="message__meta">{{createdAt}}</span>
-        </p>
-        <p><a target="_blank" href="{{url}}">My current location</a></p>
-    </div>
+    <div style="clear:both"></div>
 </script>
 
 <script id="sidebar-template" type="text/html">

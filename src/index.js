@@ -3,7 +3,7 @@ const http = require("http")
 const path = require("path")
 const socketio = require("socket.io")
 const Filter = require("bad-words")
-const {generateMessage, generateLocationMessage} = require('./utils/message')
+const {generateMessage} = require('./utils/message')
 const {addUser, removeUser, getUser, getUserInRoom} = require('./utils/users')
 
 const app = express()
@@ -44,14 +44,8 @@ io.on('connection', (socket) => {
         if (filter.isProfane(message)) return callback('Profane is not allowed')
 
         callback()
-        io.to(user.room).emit('message', generateMessage(user.username, message))
-        socket.emit('scrollToBottom', true)
-    })
-
-    socket.on('sendLocation', (location, callback) => {
-        const user = getUser(socket.id)
-        io.to(user.room).emit('locationMessage', generateLocationMessage(user.username, location))
-        callback()
+        socket.broadcast.to(user.room).emit('message', generateMessage(user.username, message))
+        socket.emit('message', generateMessage(user.username, message), true)
     })
 
     socket.on('disconnect', () => {

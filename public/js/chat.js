@@ -9,35 +9,31 @@ const $messages = document.querySelector('#messages')
 // Options
 const {username, room} = Qs.parse(location.search, {ignoreQueryPrefix: true})
 
-socket.on('message', (message) => {
-    console.log(message.text)
+/*$('#messages').on('scroll', function () {
+    if ($('#messages').scrollTop() + $('#messages').innerHeight() >= $('#messages')[0].scrollHeight) {
+
+    }
+})*/
+
+socket.on('message', (message, myself = false) => {
     const messageTemplate = $("#message-template").html()
+    let scrollUser = false
     Mustache.parse(messageTemplate)
 
-    const html = Mustache.render(messageTemplate, {
+    const data_message = {
         username: message.username,
         message: message.text,
-        createdAt: moment(message.createdAt).format('YYYY-MM-DD hh:mm:ss A'),
-    })
-    $("#messages").append(html)
-    autoscroll()
-})
+        createdAt: moment(message.createdAt).format('hh:mm:ss A'),
+        detailTime: moment(message.createdAt).format('YYYY-MM-DD hh:mm:ss A'),
+        yourself: myself
+    }
 
-socket.on('scrollToBottom', (boolean) => {
-    scrollToBottom("messages")
-})
+    const html = Mustache.render(messageTemplate, data_message)
+    if ($('#messages').scrollTop() + $('#messages').innerHeight() >= $('#messages')[0].scrollHeight) scrollUser = true
 
-socket.on('locationMessage', (url) => {
-    console.log(url)
-    const locationTemplate = $("#location-message-template").html()
-    Mustache.parse(locationTemplate)
-    const html = Mustache.render(locationTemplate, {
-        username: url.username,
-        url: url.url,
-        createdAt: moment(url.createdAt).format('YYYY-MM-DD hh:mm:ss A'),
-    })
     $("#messages").append(html)
-    autoscroll()
+
+    if (scrollUser || myself) scrollToBottom("messages")
 })
 
 socket.on('roomData', ({room, users}) => {
@@ -48,7 +44,6 @@ socket.on('roomData', ({room, users}) => {
         room, users
     })
     $("#chat__sidebar").html(html)
-    console.log(room, users)
 })
 
 $messageForm.addEventListener('submit', (e) => {
@@ -66,22 +61,6 @@ $messageForm.addEventListener('submit', (e) => {
     })
 })
 
-$("#send-location").click(() => {
-    if (!navigator.geolocation) return alert('Geolocation is not supported on this browser')
-
-    $messageFormButton.setAttribute('disabled', 'disabled')
-
-    navigator.geolocation.getCurrentPosition((position) => {
-        socket.emit('sendLocation',
-            `https://google.com/maps?q=${position.coords.longitude},${position.coords.latitude}`,
-            () => {
-                $messageFormButton.removeAttribute('disabled')
-                console.log('Location shared')
-            })
-        socket.emit('scrollToBottom', true)
-    })
-})
-
 socket.emit('join', {username, room}, (error) => {
     if (error) {
         alert(error)
@@ -92,22 +71,4 @@ socket.emit('join', {username, room}, (error) => {
 const scrollToBottom = (id) => {
     const element = document.getElementById(id);
     element.scrollTop = element.scrollHeight;
-}
-
-const autoscroll = () => {
-    // New message element
-    const $newMessage = $messages.lastElementChild
-    // Height of the new message
-    const newMessageStyles = getComputedStyle($newMessage)
-    const newMessageMargin = parseInt(newMessageStyles.marginBottom)
-    const newMessageHeight = $newMessage.offsetHeight + newMessageMargin
-    // Visible height
-    const visibleHeight = $messages.offsetHeight
-    // Height of messages container
-    const containerHeight = $messages.scrollHeight
-    // How far have I scrolled?
-    const scrollOffset = $messages.scrollTop + visibleHeight
-    if (containerHeight - newMessageHeight <= scrollOffset) {
-        $messages.scrollTop = $messages.scrollHeight
-    }
 }
