@@ -5,6 +5,7 @@ const socketio = require("socket.io")
 const Filter = require("bad-words")
 const {generateMessage} = require('./utils/message')
 const {addUser, removeUser, getUser, getUserInRoom} = require('./utils/users')
+const {listUsersTyping, addUsersTyping, removeUsersTyping} = require('./utils/typing')
 
 const app = express()
 const server = http.createServer(app)
@@ -25,7 +26,7 @@ io.on('connection', (socket) => {
 
         socket.join(user.room)
 
-        socket.emit('message', generateMessage('Admin', `Welcome ${user.username}`)) // Khởi tạo ti nhắn
+        socket.emit('message', generateMessage('Admin', `Welcome ${user.username}`)) // Khởi tạo tin nhắn
         socket.broadcast.to(user.room).emit('message', generateMessage('Admin', `${user.username} has joined`)) // Phát hiện hoạt động bên ngoài, client sẽ không nhận được thông báo này
 
         // Lấy dữ liệu user trong room
@@ -46,9 +47,38 @@ io.on('connection', (socket) => {
         callback()
         socket.broadcast.to(user.room).emit('message', generateMessage(user.username, message))
         socket.emit('message', generateMessage(user.username, message), true)
+
+        // remove typing
+        const user_id = getUser(socket.id)
+        if (user_id) {
+            removeUsersTyping(user_id.username)
+            io.to(user_id.room).emit('listUsersTyping', listUsersTyping())
+        }
+    })
+
+    socket.on('addUsersTyping', () => {
+        const user = getUser(socket.id)
+        if (user) addUsersTyping(user.username)
+
+        io.to(user.room).emit('listUsersTyping', listUsersTyping())
+    })
+
+    socket.on('removeUsersTyping', () => {
+        const user = getUser(socket.id)
+        if (user) {
+            removeUsersTyping(user.username)
+            io.to(user.room).emit('listUsersTyping', listUsersTyping())
+        }
     })
 
     socket.on('disconnect', () => {
+        // remove typing
+        const user_id = getUser(socket.id)
+        if (user_id) {
+            removeUsersTyping(user_id.username)
+            io.to(user_id.room).emit('listUsersTyping', listUsersTyping())
+        }
+
         const user = removeUser(socket.id)
 
         if (user) {
